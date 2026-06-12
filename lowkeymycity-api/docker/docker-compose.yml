@@ -78,9 +78,10 @@ services:
     command:
       - sh
       - -c
-      - >-
-        goose -dir /app/migrations postgres
-        "postgres://${DB_USER}:$(cat /run/secrets/DB_PASSWORD)@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
+      - |
+        DB_PASSWORD=$$(cat /run/secrets/DB_PASSWORD)
+        goose -dir /app/migrations postgres \
+        "postgres://${DB_USER}:$${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
         up
     secrets:
       - source: DB_PASSWORD
