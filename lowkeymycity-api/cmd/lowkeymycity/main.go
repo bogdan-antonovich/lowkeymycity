@@ -25,16 +25,17 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Config is everything the process reads from the environment. The two
-// ",file" fields (OpenAIKey, DB.Pass) expect the variable to hold a path
-// to a file containing the secret, docker-secrets style — not the secret
-// itself. All fields except Mode are required.
+// Config is everything the process reads from the environment. The
+// ",file" fields (the prompts, OpenAIKey, DB.Pass) expect the variable to
+// hold a path to a file containing the value, docker-secrets/configs
+// style — not the value itself. An unset ",file" variable without
+// notEmpty skips the file read and leaves the field empty.
 type Config struct {
 	Mode                      string `env:"MODE" envDefault:"dev"`
 	Port                      int    `env:"PORT,notEmpty"`
 	GPTModel                  string `env:"OPENAI_MODEL,notEmpty"`
-	LowkeyCityVibeCheckPrompt string `env:"LOWKEY_CITY_VIBE_CHECK_PROMPT" envDefault:""`
-	QuizResultsPrompt         string `env:"QUIZ_RESULTS_PROMPT" envDefault:""`
+	LowkeyCityVibeCheckPrompt string `env:"LOWKEY_CITY_VIBE_CHECK_PROMPT,file" envDefault:""`
+	QuizResultsPrompt         string `env:"QUIZ_RESULTS_PROMPT,file" envDefault:""`
 
 	// CORSOrigins is the comma-separated CORS allowlist; outside prod the
 	// Vite dev server origin is appended automatically.

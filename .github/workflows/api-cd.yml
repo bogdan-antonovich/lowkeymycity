@@ -103,11 +103,29 @@ jobs:
               fi
             }
 
+            # like sync_config but from a value instead of a file — for the
+            # prompts, whose text would break the envsubst'ed compose YAML
+            sync_config_value() {
+              local name="${1}_${TAG}"
+              local value="$2"
+              if [ -z "$value" ]; then
+                echo "ERROR: $1 is empty"
+                exit 1
+              fi
+              if ! docker config inspect "$name" >/dev/null 2>&1; then
+                echo "Creating config: $name"
+                printf '%s' "$value" | docker config create "$name" -
+              fi
+            }
+
             sync_secret "DB_PASSWORD"                 "$DB_PASSWORD"
             sync_secret "OPENAI_API_KEY"              "$OPENAI_API_KEY"
 
             sync_config "loki_config"        ~/lowkeymycity-api/cfg/loki-config.yml
             sync_config "grafana_datasource" ~/lowkeymycity-api/cfg/grafana-datasource.yml
+
+            sync_config_value "LOWKEY_CITY_VIBE_CHECK_PROMPT" "$LOWKEY_CITY_VIBE_CHECK_PROMPT"
+            sync_config_value "QUIZ_RESULTS_PROMPT"           "$QUIZ_RESULTS_PROMPT"
 
             cd ~/lowkeymycity-api
 
@@ -115,7 +133,6 @@ jobs:
             export DOCKER_REGISTRY="$DOCKERHUB_USERNAME"
             export PORT LOKI_PORT GRAFANA_PORT
             export DB_HOST DB_PORT DB_NAME DB_USER
-            export LOWKEY_CITY_VIBE_CHECK_PROMPT QUIZ_RESULTS_PROMPT
             export TRUSTED_PROXY_RANGES
             export OPENAI_MODEL
             export GRAFANA_PASSWORD
@@ -192,7 +209,7 @@ jobs:
 
             echo "Cleaning up old configs..."
             docker config ls --format '{{.Name}}' \
-              | grep -E '^(loki_config|grafana_datasource)_[a-f0-9]{8}$' \
+              | grep -E '^(loki_config|grafana_datasource|LOWKEY_CITY_VIBE_CHECK_PROMPT|QUIZ_RESULTS_PROMPT)_[a-f0-9]{8}$' \
               | grep -v "_${TAG}$" \
               | xargs -r docker config rm \
               || true

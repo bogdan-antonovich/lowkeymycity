@@ -22,8 +22,11 @@ services:
       MODE: prod
       PORT: ${PORT}
       OPENAI_MODEL: ${OPENAI_MODEL}
-      LOWKEY_CITY_VIBE_CHECK_PROMPT: "${LOWKEY_CITY_VIBE_CHECK_PROMPT}"
-      QUIZ_RESULTS_PROMPT: "${QUIZ_RESULTS_PROMPT}"
+      # the prompts ride in as docker configs, not env values — prompt
+      # text is YAML-hostile (quotes, newlines), so envsubst never sees
+      # it; the ",file" env fields read the mounted paths
+      LOWKEY_CITY_VIBE_CHECK_PROMPT: /run/configs/LOWKEY_CITY_VIBE_CHECK_PROMPT
+      QUIZ_RESULTS_PROMPT: /run/configs/QUIZ_RESULTS_PROMPT
       TRUSTED_PROXY_RANGES: "${TRUSTED_PROXY_RANGES}"
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
@@ -37,6 +40,11 @@ services:
         target: DB_PASSWORD
       - source: OPENAI_API_KEY
         target: OPENAI_API_KEY
+    configs:
+      - source: vibe_check_prompt
+        target: /run/configs/LOWKEY_CITY_VIBE_CHECK_PROMPT
+      - source: quiz_results_prompt
+        target: /run/configs/QUIZ_RESULTS_PROMPT
     networks:
       internal:
       shared:
@@ -176,3 +184,9 @@ configs:
   grafana_datasource:
     external: true
     name: grafana_datasource_${TAG}
+  vibe_check_prompt:
+    external: true
+    name: LOWKEY_CITY_VIBE_CHECK_PROMPT_${TAG}
+  quiz_results_prompt:
+    external: true
+    name: QUIZ_RESULTS_PROMPT_${TAG}
