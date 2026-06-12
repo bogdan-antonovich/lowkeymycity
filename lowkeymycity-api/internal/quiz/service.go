@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// InvalidCityError is returned when a city name is not in the validator's
+// ErrInvalidCity is returned when a city name is not in the validator's
 // set of known US cities.
-var InvalidCityError = errors.New("invalid city")
+var ErrInvalidCity = errors.New("invalid city")
 
 // QuizService produces quiz questions and turns finished quizzes into
 // stored results.
@@ -71,7 +71,7 @@ func NewQuizService(client openai.Client, sql SqlExecutor, validator validator.C
 // its questions and caches them in the database; every later request is
 // served from that cache, in quiz order.
 //
-// An unknown city returns InvalidCityError and no questions. A cache
+// An unknown city returns ErrInvalidCity and no questions. A cache
 // lookup, generation, or caching failure returns the underlying error
 // unchanged — when caching fails the generated questions are returned
 // alongside the error, and some of them may already be persisted.
@@ -81,7 +81,7 @@ func (s *quizService) GetPersonalizedQuestions(ctx context.Context, city string)
 
 	label, ok := s.validator.GetCityID(city)
 	if !ok {
-		err = InvalidCityError
+		err = ErrInvalidCity
 		log.Error("unknown city requested", zap.String("city", city))
 		return
 	}

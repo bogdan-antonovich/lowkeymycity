@@ -170,7 +170,7 @@ func startAPI(t *testing.T, db testdb.Conn, llmURL string) string {
 	for time.Now().Before(deadline) {
 		resp, err := http.Get(base + "/health")
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				return base
 			}
@@ -186,7 +186,7 @@ func get(t *testing.T, url string) (*http.Response, string) {
 	t.Helper()
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	return resp, string(body)
@@ -208,7 +208,7 @@ func post(t *testing.T, url, body string) (*http.Response, string) {
 	t.Helper()
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	out, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	return resp, string(out)

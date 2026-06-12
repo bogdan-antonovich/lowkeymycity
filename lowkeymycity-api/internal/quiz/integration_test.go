@@ -90,7 +90,7 @@ func TestQuizServiceIntegration(t *testing.T) {
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Atlantis, XX")
 
-		require.ErrorIs(t, err, InvalidCityError)
+		require.ErrorIs(t, err, ErrInvalidCity)
 		assert.Empty(t, q)
 		assert.Zero(t, llm.Load())
 	})

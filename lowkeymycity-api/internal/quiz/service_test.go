@@ -124,7 +124,7 @@ var portlandOnly = map[string]string{"portland, or": "Portland, OR"}
 // repeat requests, the LLM writes the quiz exactly once per city, and
 // every failure surfaces unchanged.
 func TestGetPersonalizedQuestions(t *testing.T) {
-	t.Run("unknown city returns InvalidCityError", func(t *testing.T) {
+	t.Run("unknown city returns ErrInvalidCity", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		client, calls := fakeLLM("", http.StatusOK)
 		// no expectations on sql: an invalid city must never reach storage
@@ -132,7 +132,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Atlantis, XX")
 
-		require.ErrorIs(t, err, InvalidCityError)
+		require.ErrorIs(t, err, ErrInvalidCity)
 		assert.Empty(t, q, "no questions for an unknown city")
 		assert.Zero(t, calls.Load(), "no LLM call for an unknown city")
 	})

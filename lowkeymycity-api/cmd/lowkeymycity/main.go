@@ -112,7 +112,7 @@ func main() {
 	}
 
 	logger, _ := newLogger(cfg.Mode)
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 	// the logger logging.From hands out wherever the context carries no
 	// request-scoped one
 	logging.SetDefault(logger)

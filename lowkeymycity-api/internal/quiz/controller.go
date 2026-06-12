@@ -116,7 +116,7 @@ func (qc *quizController) GetQuestions(g *echo.Group) {
 		} else {
 
 			questions, err := qc.qs.GetPersonalizedQuestions(c.Request().Context(), req.City)
-			if errors.Is(err, InvalidCityError) {
+			if errors.Is(err, ErrInvalidCity) {
 				return echo.NewHTTPError(http.StatusBadRequest, "unknown city")
 			}
 			if err != nil {
