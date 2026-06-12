@@ -77,11 +77,11 @@ services:
     image: ${DOCKER_REGISTRY}/lowkeymycity-api:${TAG}
     command:
       - sh
-      - -c
+      - -ec
       - |
-        DB_PASSWORD=$$(cat /run/secrets/DB_PASSWORD)
+        DB_PASSWORD=`cat /run/secrets/DB_PASSWORD`
         goose -dir /app/migrations postgres \
-        "postgres://${DB_USER}:$${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
+        "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
         up
     secrets:
       - source: DB_PASSWORD
