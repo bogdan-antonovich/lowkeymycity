@@ -1,0 +1,47 @@
+name: Web CI
+
+on:
+  push:
+    paths:
+      - "lowkeymycity-web/**"
+      - ".github/workflows/web-ci.yml"
+      - ".github/workflows/web-cd.yml"
+  pull_request:
+    paths:
+      - "lowkeymycity-web/**"
+      - ".github/workflows/web-ci.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: lowkeymycity-web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: lowkeymycity-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Typecheck and build
+        run: npm run build

@@ -1,0 +1,219 @@
+name: API CD
+
+on:
+  workflow_run:
+    workflows: ["API CI"]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set deploy tag
+        run: echo "TAG=$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: lowkeymycity-api
+          file: lowkeymycity-api/docker/prod.Dockerfile
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/lowkeymycity-api:${{ env.TAG }}
+          cache-from: type=gha,scope=lowkeymycity-api-prod
+          cache-to: type=gha,mode=max,scope=lowkeymycity-api-prod
+
+      - name: Copy compose to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "lowkeymycity-api/docker/docker-compose.yml,lowkeymycity-api/cfg/loki-config.yml,lowkeymycity-api/cfg/grafana-datasource.yml"
+          target: "~/lowkeymycity-api/"
+          strip_components: 1
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: >-
+            TAG,
+            LOWKEY_CITY_VIBE_CHECK_PROMPT,
+            QUIZ_RESULTS_PROMPT,
+            DOCKERHUB_USERNAME,
+            DOCKERHUB_TOKEN,
+            PORT,
+            DB_HOST,
+            DB_PORT,
+            DB_NAME,
+            DB_USER,
+            DB_PASSWORD,
+            OPENAI_API_KEY,
+            OPENAI_MODEL,
+            GRAFANA_PASSWORD,
+            LOKI_PORT,
+            GRAFANA_PORT,
+            TRUSTED_PROXY_RANGES
+          script: |
+            set -euo pipefail
+
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            sync_secret() {
+              local name="${1}_${TAG}"
+              local value="$2"
+              if [ -z "$value" ]; then
+                echo "ERROR: $1 is empty"
+                exit 1
+              fi
+              if ! docker secret inspect "$name" >/dev/null 2>&1; then
+                echo "Creating secret: $name"
+                printf '%s' "$value" | docker secret create "$name" -
+              fi
+            }
+
+            sync_config() {
+              local name="${1}_${TAG}"
+              local file="$2"
+              if ! docker config inspect "$name" >/dev/null 2>&1; then
+                echo "Creating config: $name"
+                docker config create "$name" "$file"
+              fi
+            }
+
+            sync_secret "DB_PASSWORD"                 "$DB_PASSWORD"
+            sync_secret "OPENAI_API_KEY"              "$OPENAI_API_KEY"
+
+            sync_config "loki_config"        ~/lowkeymycity-api/cfg/loki-config.yml
+            sync_config "grafana_datasource" ~/lowkeymycity-api/cfg/grafana-datasource.yml
+
+            cd ~/lowkeymycity-api
+
+            export TAG="$TAG"
+            export DOCKER_REGISTRY="$DOCKERHUB_USERNAME"
+            export PORT LOKI_PORT GRAFANA_PORT
+            export DB_HOST DB_PORT DB_NAME DB_USER
+            export LOWKEY_CITY_VIBE_CHECK_PROMPT QUIZ_RESULTS_PROMPT
+            export TRUSTED_PROXY_RANGES
+            export OPENAI_MODEL
+            export GRAFANA_PASSWORD
+
+            envsubst < docker/docker-compose.yml > docker/docker-compose.resolved.yml
+
+            docker network inspect lowkeymycity >/dev/null 2>&1 \
+              || docker network create --driver overlay --attachable lowkeymycity
+
+            docker stack deploy \
+              --with-registry-auth \
+              --prune \
+              -c docker/docker-compose.resolved.yml \
+              lowkeymycity-api_stack
+
+            echo "Waiting for services to stabilize..."
+
+            MAX_WAIT=30
+            WAIT_COUNT=0
+
+            until [ $WAIT_COUNT -ge $MAX_WAIT ]; do
+              ALL_HEALTHY=true
+
+              for SERVICE in lowkeymycity-api_stack_api lowkeymycity-api_stack_db lowkeymycity-api_stack_loki lowkeymycity-api_stack_grafana; do
+                REPLICAS=$(docker service ls \
+                  --filter name=$SERVICE \
+                  --format '{{.Replicas}}')
+
+                DESIRED=$(echo $REPLICAS | cut -d'/' -f2)
+                RUNNING=$(echo $REPLICAS | cut -d'/' -f1)
+
+                FAILED=$(docker service ps $SERVICE \
+                  --filter "desired-state=running" \
+                  --no-trunc \
+                  --format '{{.CurrentState}}' \
+                  | grep -c "Failed" || true)
+
+                if [ -z "$REPLICAS" ] || [ "$RUNNING" != "$DESIRED" ] || [ "$FAILED" -gt 0 ]; then
+                  echo "[$WAIT_COUNT/$MAX_WAIT] $SERVICE not ready: $REPLICAS failed=$FAILED"
+                  ALL_HEALTHY=false
+                fi
+              done
+
+              MIGRATE_STATE=$(docker service ps lowkeymycity-api_stack_migrate \
+                --format '{{.CurrentState}}' \
+                | head -1)
+
+              if [[ "$MIGRATE_STATE" != Complete* ]]; then
+                echo "[$WAIT_COUNT/$MAX_WAIT] migrate not complete: $MIGRATE_STATE"
+                ALL_HEALTHY=false
+              fi
+
+              if [ "$ALL_HEALTHY" = true ]; then
+                echo "All services healthy."
+                break
+              fi
+
+              sleep 10
+              WAIT_COUNT=$((WAIT_COUNT + 1))
+            done
+
+            if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
+              echo "ERROR: Deployment timed out"
+              docker service ls
+              exit 1
+            fi
+
+            echo "Cleaning up old secrets..."
+            docker secret ls --format '{{.Name}}' \
+              | grep -E '^(DB_PASSWORD|OPENAI_API_KEY)_[a-f0-9]{8}$' \
+              | grep -v "_${TAG}$" \
+              | xargs -r docker secret rm \
+              || true
+
+            echo "Cleaning up old configs..."
+            docker config ls --format '{{.Name}}' \
+              | grep -E '^(loki_config|grafana_datasource)_[a-f0-9]{8}$' \
+              | grep -v "_${TAG}$" \
+              | xargs -r docker config rm \
+              || true
+
+            echo "Cleaning up old images..."
+            docker image prune -f
+        env:
+          TAG: ${{ env.TAG }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          PORT: ${{ vars.PORT }}
+          LOKI_PORT: ${{ vars.LOKI_PORT }}
+          GRAFANA_PORT: ${{ vars.GRAFANA_PORT }}
+          TRUSTED_PROXY_RANGES: ${{ vars.TRUSTED_PROXY_RANGES }}
+          LOWKEY_CITY_VIBE_CHECK_PROMPT: ${{ vars.LOWKEY_CITY_VIBE_CHECK_PROMPT }}
+          QUIZ_RESULTS_PROMPT: ${{ vars.QUIZ_RESULTS_PROMPT }}
+          DB_HOST: ${{ vars.DB_HOST }}
+          DB_PORT: ${{ vars.DB_PORT }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          DB_USER: ${{ vars.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          GRAFANA_PASSWORD: ${{ secrets.GRAFANA_PASSWORD }}

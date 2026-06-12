@@ -1,0 +1,247 @@
+basePath: /api/v1
+definitions:
+  echo.HTTPError:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_quiz.Answer:
+    properties:
+      answer:
+        type: string
+      question:
+        type: string
+      question_id:
+        type: integer
+    required:
+    - answer
+    - question
+    - question_id
+    type: object
+  internal_quiz.GetQuestionsResponse:
+    properties:
+      city:
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/internal_quiz.Question'
+        type: array
+    type: object
+  internal_quiz.GetResultsRequest:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/internal_quiz.Answer'
+        minItems: 1
+        type: array
+      city:
+        type: string
+      mode:
+        enum:
+        - match
+        - city
+        type: string
+    required:
+    - answers
+    - mode
+    type: object
+  internal_quiz.Question:
+    properties:
+      id:
+        type: string
+      options:
+        items:
+          $ref: '#/definitions/lowkeymycity_pkg_types.Option'
+        type: array
+      text:
+        type: string
+    type: object
+  lowkeymycity_pkg_types.Alternative:
+    properties:
+      blurb:
+        type: string
+      city:
+        type: string
+    type: object
+  lowkeymycity_pkg_types.Option:
+    properties:
+      id:
+        type: string
+      text:
+        type: string
+    type: object
+  lowkeymycity_pkg_types.QuizResult:
+    properties:
+      alternatives:
+        items:
+          $ref: '#/definitions/lowkeymycity_pkg_types.Alternative'
+        type: array
+      city:
+        type: string
+      closing:
+        type: string
+      greenFlags:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      mode:
+        type: string
+      redFlags:
+        items:
+          type: string
+        type: array
+      score:
+        type: integer
+      summary:
+        type: string
+      title:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Backend for the lowkeymycity.com city vibe-check quiz.
+  title: LowkeyMyCity API
+  version: "1.0"
+paths:
+  /cities:
+    get:
+      description: Every city label the validator accepts, ordered by population descending.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: US city list
+      tags:
+      - cities
+  /quiz:
+    get:
+      description: 'Question set for a quiz run: fixed bank for match mode, LLM-generated
+        cached questions for city mode.'
+      parameters:
+      - description: quiz mode, strictly one of the enum
+        enum:
+        - match
+        - city
+        in: query
+        name: mode
+        required: true
+        type: string
+      - description: known US city name; required when mode=city
+        in: query
+        name: city
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_quiz.GetQuestionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: Quiz questions
+      tags:
+      - quiz
+  /quiz/result:
+    post:
+      consumes:
+      - application/json
+      description: Stores (or reuses) the verdict for an answer combination and returns
+        it with its permanent id.
+      parameters:
+      - description: quiz answers
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_quiz.GetResultsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/lowkeymycity_pkg_types.QuizResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: Submit quiz answers
+      tags:
+      - quiz
+  /results/{id}:
+    get:
+      description: The stored verdict for one result id, as shown on the result page.
+      parameters:
+      - description: result id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/lowkeymycity_pkg_types.QuizResult'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: Stored quiz result
+      tags:
+      - results
+  /results/{id}/pdf:
+    get:
+      description: The stored verdict rendered as a one-page A4 PDF ("keep the receipts").
+      parameters:
+      - description: result id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/echo.HTTPError'
+      summary: Result as PDF
+      tags:
+      - results
+swagger: "2.0"

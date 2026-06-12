@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Bricolage Grotesque', 'Inter', sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-cream: #faf6ee;
+  --color-ink: #221d17;
+  --color-ink-soft: #6b6258;
+  --color-lilac: #a78bfa;
+  --color-lilac-deep: #7c5cf0;
+  --color-coral: #ff6b5e;
+  --color-alarm: #d93a2b;
+  --color-butter: #ffd166;
+  --color-mint: #7fd8b4;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  @apply bg-cream font-sans text-ink antialiased;
+}
+
+::selection {
+  @apply bg-lilac text-ink;
+}
+
+@page {
+  size: A4;
+  margin: 10mm 12mm;
+}

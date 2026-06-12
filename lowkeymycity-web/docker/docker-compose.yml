@@ -1,0 +1,33 @@
+version: "3.8"
+
+# Resolved with envsubst by the CD pipeline; ${VAR}s are filled at deploy.
+
+services:
+  web:
+    image: ${DOCKER_REGISTRY}/lowkeymycity-web:${TAG}
+    environment:
+      # the api's listen port, envsubst'ed into the nginx proxy_pass by
+      # the image's entrypoint at container start
+      API_PORT: ${PORT}
+    networks:
+      - shared
+    ports:
+      - target: 80
+        published: ${WEB_PORT}
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+      update_config:
+        parallelism: 1
+        # host-mode port 80 can't be bound twice, so the old task must
+        # stop before the new one starts
+        order: stop-first
+
+networks:
+  shared:
+    external: true
+    name: lowkeymycity

@@ -1,0 +1,132 @@
+name: Web CD
+
+on:
+  workflow_run:
+    workflows: ["Web CI"]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set deploy tag
+        run: echo "TAG=$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: lowkeymycity-web
+          file: lowkeymycity-web/docker/prod.Dockerfile
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/lowkeymycity-web:${{ env.TAG }}
+          cache-from: type=gha,scope=lowkeymycity-web-prod
+          cache-to: type=gha,mode=max,scope=lowkeymycity-web-prod
+          build-args: |
+            VITE_USE_MOCKS=${{ vars.VITE_USE_MOCKS }}
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+            VITE_APP_URL=${{ vars.VITE_APP_URL }}
+            VITE_POSTHOG_KEY=${{ vars.VITE_POSTHOG_KEY }}
+            VITE_POSTHOG_HOST=${{ vars.VITE_POSTHOG_HOST }}
+
+      - name: Copy compose to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "lowkeymycity-web/docker/docker-compose.yml"
+          target: "~/lowkeymycity-web/"
+          strip_components: 2
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: TAG,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,PORT,WEB_PORT
+          script: |
+            set -euo pipefail
+
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            cd ~/lowkeymycity-web
+
+            export TAG="$TAG"
+            export DOCKER_REGISTRY="$DOCKERHUB_USERNAME"
+            export PORT WEB_PORT
+
+            envsubst < docker-compose.yml > docker-compose.resolved.yml
+
+            docker network inspect lowkeymycity >/dev/null 2>&1 \
+              || docker network create --driver overlay --attachable lowkeymycity
+
+            docker stack deploy \
+              --with-registry-auth \
+              --prune \
+              -c docker-compose.resolved.yml \
+              lowkeymycity-web_stack
+
+            echo "Waiting for web service to stabilize..."
+
+            MAX_WAIT=20
+            WAIT_COUNT=0
+
+            until [ $WAIT_COUNT -ge $MAX_WAIT ]; do
+              REPLICAS=$(docker service ls \
+                --filter name=lowkeymycity-web_stack_web \
+                --format '{{.Replicas}}')
+
+              DESIRED=$(echo $REPLICAS | cut -d'/' -f2)
+              RUNNING=$(echo $REPLICAS | cut -d'/' -f1)
+
+              FAILED=$(docker service ps lowkeymycity-web_stack_web \
+                --filter "desired-state=running" \
+                --no-trunc \
+                --format '{{.CurrentState}}' \
+                | grep -c "Failed" || true)
+
+              if [ -n "$REPLICAS" ] && [ "$RUNNING" = "$DESIRED" ] && [ "$FAILED" -eq 0 ]; then
+                echo "Service healthy."
+                break
+              fi
+
+              echo "[$WAIT_COUNT/$MAX_WAIT] lowkeymycity-web_stack_web not ready: $REPLICAS failed=$FAILED"
+              sleep 10
+              WAIT_COUNT=$((WAIT_COUNT + 1))
+            done
+
+            if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
+              echo "ERROR: Deployment timed out"
+              docker service ls
+              exit 1
+            fi
+
+            echo "Cleaning up old images..."
+            docker image prune -f
+        env:
+          TAG: ${{ env.TAG }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          PORT: ${{ vars.PORT }}
+          WEB_PORT: ${{ vars.WEB_PORT }}

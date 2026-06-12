@@ -1,0 +1,124 @@
+name: API CI
+
+on:
+  push:
+    paths:
+      - "lowkeymycity-api/**"
+      - ".github/workflows/api-ci.yml"
+      - ".github/workflows/api-cd.yml"
+  pull_request:
+    paths:
+      - "lowkeymycity-api/**"
+      - ".github/workflows/api-ci.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: lowkeymycity-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: lowkeymycity-api/go.mod
+          cache: true
+          cache-dependency-path: lowkeymycity-api/go.sum
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.8.0
+          install-mode: goinstall
+          working-directory: lowkeymycity-api
+
+      - name: Check go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Check swagger docs are current
+        run: |
+          go run github.com/swaggo/swag/cmd/swag@v1.16.4 init \
+            -g cmd/lowkeymycity/main.go -o docs \
+            --outputTypes json,yaml --parseDependency --parseInternal
+          git diff --exit-code docs
+
+      - name: Security scan
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-file: lowkeymycity-api/go.mod
+          work-dir: lowkeymycity-api
+
+  unit-tests:
+    needs: quality-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: lowkeymycity-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: lowkeymycity-api/go.mod
+          cache: true
+          cache-dependency-path: lowkeymycity-api/go.sum
+
+      - name: Run Unit Tests
+        run: go test -race -count=1 -short -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lowkeymycity-api/coverage.out
+          flags: unit
+
+  integration-tests:
+    needs: quality-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: lowkeymycity-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: lowkeymycity-api/go.mod
+          cache: true
+          cache-dependency-path: lowkeymycity-api/go.sum
+
+      - name: Run Integration Tests
+        run: go test -race -count=1 -timeout 5m ./internal/... ./pkg/...
+
+  e2e-tests:
+    needs: [quality-gate, unit-tests, integration-tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: lowkeymycity-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: lowkeymycity-api/go.mod
+          cache: true
+          cache-dependency-path: lowkeymycity-api/go.sum
+
+      - name: Run E2E Tests
+        run: go test -race -count=1 -timeout 5m ./e2e/...

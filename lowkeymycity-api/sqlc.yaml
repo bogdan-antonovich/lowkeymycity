@@ -1,0 +1,50 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "pkg/validator/queries"
+    schema: "migrations"
+    gen:
+      go:
+        package: "validator"
+        out: "pkg/validator"
+        sql_package: "pgx/v5"
+
+  - engine: "postgresql"
+    queries: "internal/quiz/queries"
+    schema: "migrations"
+    gen:
+      go:
+        package: "quiz"
+        out: "internal/quiz"
+        sql_package: "pgx/v5"
+        overrides:
+          - column: "city_questions.options"
+            go_type:
+              import: "lowkeymycity/pkg/types"
+              type: "Option"
+              slice: true
+          - column: "match_questions.options"
+            go_type:
+              import: "lowkeymycity/pkg/types"
+              type: "Option"
+              slice: true
+          - column: "results.alternatives"
+            go_type:
+              import: "lowkeymycity/pkg/types"
+              type: "Alternative"
+              slice: true
+
+  - engine: "postgresql"
+    queries: "internal/results/queries"
+    schema: "migrations"
+    gen:
+      go:
+        package: "results"
+        out: "internal/results"
+        sql_package: "pgx/v5"
+        overrides:
+          - column: "results.alternatives"
+            go_type:
+              import: "lowkeymycity/pkg/types"
+              type: "Alternative"
+              slice: true

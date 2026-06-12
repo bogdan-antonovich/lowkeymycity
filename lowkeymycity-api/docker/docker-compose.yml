@@ -1,0 +1,178 @@
+version: "3.8"
+
+# This file is a template: the CD pipeline resolves every ${VAR} with
+# envsubst at deploy time, so each one must be exported by the deploy
+# script. Nothing here is interpolated by docker itself.
+
+x-loki-logging: &loki-logging
+  driver: loki
+  options:
+    # the logging driver runs on the host, outside the overlay network,
+    # so it reaches loki through the host-published port
+    loki-url: "http://localhost:${LOKI_PORT}/loki/api/v1/push"
+    loki-external-labels: "stack=lowkeymycity,service={{.Name}}"
+    loki-retries: "5"
+    loki-max-backoff: "5s"
+    loki-timeout: "10s"
+
+services:
+  api:
+    image: ${DOCKER_REGISTRY}/lowkeymycity-api:${TAG}
+    environment:
+      MODE: prod
+      PORT: ${PORT}
+      OPENAI_MODEL: ${OPENAI_MODEL}
+      LOWKEY_CITY_VIBE_CHECK_PROMPT: "${LOWKEY_CITY_VIBE_CHECK_PROMPT}"
+      QUIZ_RESULTS_PROMPT: "${QUIZ_RESULTS_PROMPT}"
+      TRUSTED_PROXY_RANGES: "${TRUSTED_PROXY_RANGES}"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      # the ",file" env fields expect a path to the secret, not the value
+      DB_PASS: /run/secrets/DB_PASSWORD
+      OPENAI_API_KEY: /run/secrets/OPENAI_API_KEY
+    secrets:
+      - source: DB_PASSWORD
+        target: DB_PASSWORD
+      - source: OPENAI_API_KEY
+        target: OPENAI_API_KEY
+    networks:
+      internal:
+      shared:
+        aliases:
+          - api
+    ports:
+      - target: ${PORT}
+        published: ${PORT}
+        protocol: tcp
+        mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${PORT}/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+    logging: *loki-logging
+
+  migrate:
+    image: ${DOCKER_REGISTRY}/lowkeymycity-api:${TAG}
+    command:
+      - sh
+      - -c
+      - >-
+        goose -dir /app/migrations postgres
+        "postgres://${DB_USER}:$(cat /run/secrets/DB_PASSWORD)@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
+        up
+    secrets:
+      - source: DB_PASSWORD
+        target: DB_PASSWORD
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+    secrets:
+      - source: DB_PASSWORD
+        target: DB_PASSWORD
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+    logging: *loki-logging
+
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/config.yml
+    configs:
+      - source: loki_config
+        target: /etc/loki/config.yml
+    volumes:
+      - loki_data:/loki
+    networks:
+      - internal
+    ports:
+      - target: 3100
+        published: ${LOKI_PORT}
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    configs:
+      - source: grafana_datasource
+        target: /etc/grafana/provisioning/datasources/loki.yml
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - internal
+    ports:
+      - target: 3000
+        published: ${GRAFANA_PORT}
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+networks:
+  internal:
+    driver: overlay
+  # shared with the web stack, whose nginx proxies /api/ to the alias above
+  shared:
+    external: true
+    name: lowkeymycity
+
+volumes:
+  db_data:
+  loki_data:
+  grafana_data:
+
+secrets:
+  DB_PASSWORD:
+    external: true
+    name: DB_PASSWORD_${TAG}
+  OPENAI_API_KEY:
+    external: true
+    name: OPENAI_API_KEY_${TAG}
+
+configs:
+  loki_config:
+    external: true
+    name: loki_config_${TAG}
+  grafana_datasource:
+    external: true
+    name: grafana_datasource_${TAG}

@@ -1,0 +1,21 @@
+node_modules/
+lowkeymycity-web/dist
+lowkeymycity-web/dist-ssr
+lowkeymycity-web/coverage
+*.local
+
+lowkeymycity-web/logs
+lowkeymycity-web/*.log
+lowkeymycity-web/npm-debug.log*
+
+# go test coverage output (CI writes coverage.out)
+lowkeymycity-api/coverage.out
+
+# raw data downloads (the generated lowkeymycity-web/public/cities.json is committed)
+*.zip
+
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+.vite
