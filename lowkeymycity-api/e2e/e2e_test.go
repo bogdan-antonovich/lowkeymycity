@@ -320,7 +320,7 @@ func TestE2E(t *testing.T) {
 		req.Header.Set("Access-Control-Request-Method", http.MethodGet)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		assert.Equal(t, "https://lowkeymycity.com", resp.Header.Get("Access-Control-Allow-Origin"))
 
 		health, _ := get(t, base+"/health")
