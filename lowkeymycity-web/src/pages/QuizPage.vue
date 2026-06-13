@@ -123,7 +123,7 @@ async function finish() {
   cookingTimer = window.setInterval(() => {
     i = (i + 1) % cookingLines.length
     cookingLine.value = cookingLines[i]
-  }, 1500)
+  }, 3500)
   try {
     const result = await submitQuiz({ mode, city, answers: answers.value })
     router.replace(`/r/${result.id}`)
