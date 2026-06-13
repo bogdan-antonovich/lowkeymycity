@@ -71,7 +71,7 @@ onMounted(async () => {
   loadingTimer = window.setInterval(() => {
     li = (li + 1) % loadingLines.length
     loadingLine.value = loadingLines[li]
-  }, 1500)
+  }, 3500)
   try {
     questions.value = (await getQuestions(mode, city)).questions
     stage.value = 'quiz'
