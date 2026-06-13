@@ -25,6 +25,23 @@ const progress = computed(() =>
   questions.value.length ? (index.value / questions.value.length) * 100 : 0,
 )
 
+const loadingLines =
+  mode === 'city'
+    ? [
+        `scouting ${cityName} real quick…`,
+        'checking what makes it tick…',
+        'reading the local vibe…',
+        'almost got your questions…',
+      ]
+    : [
+        'thinking about what you like…',
+        'scanning the whole country…',
+        'putting together your quiz…',
+        'almost ready…',
+      ]
+const loadingLine = ref(loadingLines[0])
+let loadingTimer: number | undefined
+
 const cookingLines =
   mode === 'city'
     ? [
@@ -50,16 +67,24 @@ onMounted(async () => {
     return
   }
   window.addEventListener('keydown', onKey)
+  let li = 0
+  loadingTimer = window.setInterval(() => {
+    li = (li + 1) % loadingLines.length
+    loadingLine.value = loadingLines[li]
+  }, 1500)
   try {
     questions.value = (await getQuestions(mode, city)).questions
     stage.value = 'quiz'
   } catch {
     stage.value = 'error'
+  } finally {
+    clearInterval(loadingTimer)
   }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
+  if (loadingTimer) clearInterval(loadingTimer)
   if (cookingTimer) clearInterval(cookingTimer)
 })
 
@@ -122,9 +147,9 @@ function retry() {
     <!-- fetching questions -->
     <div v-if="stage === 'loading'" class="pt-10 text-center" aria-busy="true">
       <div class="mb-6 animate-bounce text-5xl">🍳</div>
-      <p class="font-display text-2xl font-bold">
-        {{ mode === 'city' ? `cooking up questions for ${cityName}…` : 'grabbing the questions…' }}
-      </p>
+      <Transition name="q" mode="out-in">
+        <p :key="loadingLine" class="font-display text-2xl font-bold">{{ loadingLine }}</p>
+      </Transition>
       <p class="mt-3 text-ink-soft">takes a few seconds. stretch or something.</p>
     </div>
 

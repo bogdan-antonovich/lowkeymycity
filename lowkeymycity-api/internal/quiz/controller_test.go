@@ -58,7 +58,7 @@ func TestControllerGetQuestions(t *testing.T) {
 		require.Equal(t, http.StatusOK, rec.Code)
 		var got GetQuestionsResponse
 		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-		assert.Equal(t, matchBank, got.Questions, "the bank comes back wrapped in the response envelope")
+		assert.Equal(t, toQuestionResponses(matchBank), got.Questions, "the bank comes back wrapped in the response envelope")
 		assert.Empty(t, got.City, "match mode has no city to echo")
 	})
 
@@ -74,7 +74,7 @@ func TestControllerGetQuestions(t *testing.T) {
 		require.Equal(t, http.StatusOK, rec.Code)
 		var got GetQuestionsResponse
 		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-		assert.Equal(t, portlandQuestions, got.Questions)
+		assert.Equal(t, toQuestionResponses(portlandQuestions), got.Questions)
 		assert.Equal(t, "Portland, OR", got.City, "the requested city is echoed back")
 	})
 

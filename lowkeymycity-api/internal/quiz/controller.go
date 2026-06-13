@@ -48,13 +48,34 @@ type GetQuestionsRequest struct {
 	City string `json:"city" query:"city" validate:"required_if=Mode city,omitempty,city_exists"`
 }
 
+// QuestionResponse is one quiz question as served over the wire. Options
+// are plain text strings — the {id,text} shape used internally is not
+// exposed to the frontend.
+type QuestionResponse struct {
+	ID      string   `json:"id"`
+	Text    string   `json:"text"`
+	Options []string `json:"options"`
+}
+
 // GetQuestionsResponse is the GET /quiz payload: the question set plus the
 // city it was asked for, echoed back as submitted — omitted when absent,
 // as in match mode. The shape mirrors what the frontend expects (and what
 // its mock path builds).
 type GetQuestionsResponse struct {
-	City      string     `json:"city,omitempty"`
-	Questions []Question `json:"questions"`
+	City      string             `json:"city,omitempty"`
+	Questions []QuestionResponse `json:"questions"`
+}
+
+func toQuestionResponses(questions []Question) []QuestionResponse {
+	out := make([]QuestionResponse, len(questions))
+	for i, q := range questions {
+		opts := make([]string, len(q.Options))
+		for j, o := range q.Options {
+			opts[j] = o.Text
+		}
+		out[i] = QuestionResponse{ID: q.ID, Text: q.Text, Options: opts}
+	}
+	return out
 }
 
 // NewQuizController builds the quiz controller around qs, which must be a
@@ -111,7 +132,7 @@ func (qc *quizController) GetQuestions(g *echo.Group) {
 				return err
 			}
 
-			return c.JSON(http.StatusOK, GetQuestionsResponse{City: req.City, Questions: questions})
+			return c.JSON(http.StatusOK, GetQuestionsResponse{City: req.City, Questions: toQuestionResponses(questions)})
 
 		} else {
 
@@ -123,7 +144,7 @@ func (qc *quizController) GetQuestions(g *echo.Group) {
 				return err
 			}
 
-			return c.JSON(http.StatusOK, GetQuestionsResponse{City: req.City, Questions: questions})
+			return c.JSON(http.StatusOK, GetQuestionsResponse{City: req.City, Questions: toQuestionResponses(questions)})
 		}
 	})
 }
