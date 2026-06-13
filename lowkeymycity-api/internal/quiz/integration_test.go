@@ -98,12 +98,15 @@ func TestQuizServiceIntegration(t *testing.T) {
 	t.Run("the match bank is empty until seeded, then served in quiz order", func(t *testing.T) {
 		svc, llm := service("")
 
-		// migrations create match_questions but seed nothing
+		// clear the migration-seeded rows so this subtest controls its own state
+		_, err := pool.Exec(t.Context(), `DELETE FROM match_questions`)
+		require.NoError(t, err)
+
 		q, err := svc.GetPreStoredQuestions(t.Context())
 		require.NoError(t, err, "an unseeded bank is not an error")
 		assert.Empty(t, q)
 
-		// seed backwards again: quiz order must come from position
+		// seed backwards: quiz order must come from position, not insertion order
 		for i, mq := range matchBank {
 			_, err := pool.Exec(t.Context(),
 				`INSERT INTO match_questions (meaning_id, position, text, options) VALUES ($1, $2, $3, $4)`,

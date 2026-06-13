@@ -274,10 +274,18 @@ func TestE2E(t *testing.T) {
 		assert.Contains(t, body, `"city":"Portland, OR"`, "the requested city is echoed back")
 	})
 
-	t.Run("the match bank is an empty JSON array, not null", func(t *testing.T) {
+	t.Run("the match bank is served from the seed migration", func(t *testing.T) {
 		resp, body := get(t, base+"/api/v1/quiz?mode=match")
 		require.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.JSONEq(t, "[]", questionsOf(t, body), "an unseeded bank serializes as [] for the frontend")
+		var questions []struct {
+			ID      string   `json:"id"`
+			Text    string   `json:"text"`
+			Options []string `json:"options"`
+		}
+		require.NoError(t, json.Unmarshal([]byte(questionsOf(t, body)), &questions))
+		assert.Len(t, questions, 12, "all 12 match questions come back")
+		assert.Equal(t, "climate", questions[0].ID, "served in position order")
+		assert.Len(t, questions[0].Options, 4, "each question has 4 options")
 	})
 
 	t.Run("validation guards the edge with 400s", func(t *testing.T) {
