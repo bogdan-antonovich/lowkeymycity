@@ -26,7 +26,7 @@ type quizController struct {
 // question and answer text travel with the id because the verdict is
 // generated from them as-is — the backend never looks the question back up.
 type Answer struct {
-	QuestionID int    `json:"question_id" validate:"required"`
+	QuestionID string `json:"questionId" validate:"required"`
 	Question   string `json:"question" validate:"required"`
 	Answer     string `json:"answer" validate:"required"`
 }

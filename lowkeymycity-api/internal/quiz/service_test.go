@@ -318,8 +318,8 @@ func TestGetPreStoredQuestions(t *testing.T) {
 // quizAnswers is one finished quiz the way the controller hands it over —
 // full question and answer text travel with the id.
 var quizAnswers = []Answer{
-	{QuestionID: 1, Question: "eight months of drizzle: cozy or career-ending?", Answer: "cozy, hand me the sad lamp"},
-	{QuestionID: 2, Question: "your ideal friday night winds down at...", Answer: "ten, like a civilized person"},
+	{QuestionID: "climate", Question: "eight months of drizzle: cozy or career-ending?", Answer: "cozy, hand me the sad lamp"},
+	{QuestionID: "pace", Question: "your ideal friday night winds down at...", Answer: "ten, like a civilized person"},
 }
 
 // portlandVerdict is the id-less verdict the fake LLM writes for a city

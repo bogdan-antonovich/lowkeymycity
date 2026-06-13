@@ -68,8 +68,8 @@ const verdictJSON = `{
 const submissionJSON = `{
 	"mode":"city","city":"Portland, OR",
 	"answers":[
-		{"question_id":1,"question":"eight months of drizzle: cozy or career-ending?","answer":"cozy, hand me the sad lamp"},
-		{"question_id":2,"question":"your ideal friday night winds down at...","answer":"ten, like a civilized person"}
+		{"questionId":"climate","question":"eight months of drizzle: cozy or career-ending?","answer":"cozy, hand me the sad lamp"},
+		{"questionId":"pace","question":"your ideal friday night winds down at...","answer":"ten, like a civilized person"}
 	]
 }`
 

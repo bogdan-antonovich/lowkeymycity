@@ -11,12 +11,12 @@ definitions:
         type: string
       question:
         type: string
-      question_id:
-        type: integer
+      questionId:
+        type: string
     required:
     - answer
     - question
-    - question_id
+    - questionId
     type: object
   internal_quiz.GetQuestionsResponse:
     properties:

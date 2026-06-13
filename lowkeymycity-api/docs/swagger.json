@@ -231,7 +231,7 @@
             "required": [
                 "answer",
                 "question",
-                "question_id"
+                "questionId"
             ],
             "properties": {
                 "answer": {
@@ -240,8 +240,8 @@
                 "question": {
                     "type": "string"
                 },
-                "question_id": {
-                    "type": "integer"
+                "questionId": {
+                    "type": "string"
                 }
             }
         },

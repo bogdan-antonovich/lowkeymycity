@@ -146,7 +146,7 @@ func TestQuizServiceIntegration(t *testing.T) {
 		wandering.City = "Asheville, NC"
 		svc, _ := service(mustJSON(wandering))
 		// fresh city so this is a new combination, not a replay from above
-		answers := []Answer{{QuestionID: 1, Question: "mountains?", Answer: "yes"}}
+		answers := []Answer{{QuestionID: "q1", Question: "mountains?", Answer: "yes"}}
 
 		res, err := svc.GetResults(t.Context(), "city", "Denver, CO", answers)
 
@@ -156,7 +156,7 @@ func TestQuizServiceIntegration(t *testing.T) {
 
 	t.Run("match mode lets the LLM's pick stand", func(t *testing.T) {
 		svc, _ := service(mustJSON(ashevilleVerdict))
-		answers := []Answer{{QuestionID: 1, Question: "hurry?", Answer: "never"}}
+		answers := []Answer{{QuestionID: "q1", Question: "hurry?", Answer: "never"}}
 
 		res, err := svc.GetResults(t.Context(), "match", "Portland, OR", answers)
 
@@ -169,7 +169,7 @@ func TestQuizServiceIntegration(t *testing.T) {
 		// stored row." The results table backs this with a UNIQUE
 		// combination; here real goroutines race on a real constraint.
 		svc, _ := service(mustJSON(portlandVerdict))
-		answers := []Answer{{QuestionID: 1, Question: "race condition?", Answer: "hopefully not"}}
+		answers := []Answer{{QuestionID: "q1", Question: "race condition?", Answer: "hopefully not"}}
 
 		const racers = 4
 		results := make([]types.QuizResult, racers)
