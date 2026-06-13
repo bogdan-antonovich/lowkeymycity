@@ -254,7 +254,7 @@
                 "questions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_quiz.Question"
+                        "$ref": "#/definitions/internal_quiz.QuestionResponse"
                     }
                 }
             }
@@ -285,7 +285,7 @@
                 }
             }
         },
-        "internal_quiz.Question": {
+        "internal_quiz.QuestionResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -294,7 +294,7 @@
                 "options": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/lowkeymycity_pkg_types.Option"
+                        "type": "string"
                     }
                 },
                 "text": {
@@ -309,17 +309,6 @@
                     "type": "string"
                 },
                 "city": {
-                    "type": "string"
-                }
-            }
-        },
-        "lowkeymycity_pkg_types.Option": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "text": {
                     "type": "string"
                 }
             }

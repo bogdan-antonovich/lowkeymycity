@@ -24,7 +24,7 @@ definitions:
         type: string
       questions:
         items:
-          $ref: '#/definitions/internal_quiz.Question'
+          $ref: '#/definitions/internal_quiz.QuestionResponse'
         type: array
     type: object
   internal_quiz.GetResultsRequest:
@@ -45,13 +45,13 @@ definitions:
     - answers
     - mode
     type: object
-  internal_quiz.Question:
+  internal_quiz.QuestionResponse:
     properties:
       id:
         type: string
       options:
         items:
-          $ref: '#/definitions/lowkeymycity_pkg_types.Option'
+          type: string
         type: array
       text:
         type: string
@@ -61,13 +61,6 @@ definitions:
       blurb:
         type: string
       city:
-        type: string
-    type: object
-  lowkeymycity_pkg_types.Option:
-    properties:
-      id:
-        type: string
-      text:
         type: string
     type: object
   lowkeymycity_pkg_types.QuizResult:
