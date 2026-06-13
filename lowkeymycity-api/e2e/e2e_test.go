@@ -33,12 +33,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// questionsJSON is what the fake LLM writes when asked for a city quiz.
-const questionsJSON = `[
+// questionsLLMReply is what the fake LLM writes when asked for a city quiz —
+// options are {id,text} objects because that is what the LLM prompt produces.
+const questionsLLMReply = `[
 	{"id":"climate","text":"eight months of drizzle: cozy or career-ending?","options":[
 		{"id":"cozy","text":"cozy, hand me the sad lamp"},{"id":"no","text":"i would simply perish"}]},
 	{"id":"pace","text":"your ideal friday night winds down at...","options":[
 		{"id":"ten","text":"ten, like a civilized person"},{"id":"sunrise","text":"the question offends me"}]}
+]`
+
+// questionsJSON is the shape the API serves to the frontend — options are
+// flattened to plain text strings (the {id,text} layer is stripped in the
+// controller before the response goes out).
+const questionsJSON = `[
+	{"id":"climate","text":"eight months of drizzle: cozy or career-ending?","options":[
+		"cozy, hand me the sad lamp","i would simply perish"]},
+	{"id":"pace","text":"your ideal friday night winds down at...","options":[
+		"ten, like a civilized person","the question offends me"]}
 ]`
 
 // verdictJSON is the fake LLM's verdict for a finished quiz — deliberately
@@ -250,7 +261,7 @@ func TestE2E(t *testing.T) {
 	})
 
 	t.Run("a city quiz is generated once, then served from the cache", func(t *testing.T) {
-		llm.replyWith(questionsJSON)
+		llm.replyWith(questionsLLMReply)
 		resp, body := get(t, base+"/api/v1/quiz?mode=city&city=+porTLand%2C+or+")
 		require.Equal(t, http.StatusOK, resp.StatusCode, "body: %s", body)
 		assert.JSONEq(t, questionsJSON, questionsOf(t, body), "the LLM-written quiz comes back")
