@@ -17,7 +17,7 @@ type Pinger interface {
 	Ping(ctx context.Context) error
 }
 
-// healthController holds the database handle the /health probe pings
+// healthController holds the database handle the /health probe pings.
 type healthController struct {
 	db Pinger
 }
