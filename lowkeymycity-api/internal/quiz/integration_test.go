@@ -33,7 +33,7 @@ func TestQuizServiceIntegration(t *testing.T) {
 	// service builds one quiz service whose LLM always replies with reply
 	service := func(reply string) (QuizService, *atomic.Int64) {
 		client, calls := fakeLLM(reply, http.StatusOK)
-		return NewQuizService(client, sql, cv, "city-vibe-prompt", "verdict-prompt"), calls
+		return NewQuizService(client, sql, cv, "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt"), calls
 	}
 	mustJSON := func(v any) string {
 		b, err := json.Marshal(v)

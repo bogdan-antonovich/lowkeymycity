@@ -45,7 +45,8 @@ type quizService struct {
 	sql                       SqlExecutor
 	validator                 validator.CityValidator
 	lowkeyCityVibeCheckPrompt string
-	quizeResultPrompt         string
+	cityResultPrompt          string
+	matchResultPrompt         string
 }
 
 // Question is one quiz question as served to the frontend. ID names the
@@ -59,11 +60,12 @@ type Question struct {
 
 // NewQuizService assembles the quiz service from its three dependencies:
 // an authenticated OpenAI client, the generated SqlExecutor over the live
-// pool, and an Init-ed CityValidator. Nothing is checked here — a nil sql
-// or validator panics on first use, a misconfigured client fails on the
-// first LLM call.
-func NewQuizService(client openai.Client, sql SqlExecutor, validator validator.CityValidator, lowkeyCityVibeCheckPrompt, quizeResultPrompt string) *quizService {
-	return &quizService{client: client, sql: sql, validator: validator, lowkeyCityVibeCheckPrompt: lowkeyCityVibeCheckPrompt, quizeResultPrompt: quizeResultPrompt}
+// pool, and an Init-ed CityValidator. The verdict prompt is split by mode:
+// cityResultPrompt drives city-check verdicts, matchResultPrompt drives
+// match-mode verdicts. Nothing is checked here — a nil sql or validator
+// panics on first use, a misconfigured client fails on the first LLM call.
+func NewQuizService(client openai.Client, sql SqlExecutor, validator validator.CityValidator, lowkeyCityVibeCheckPrompt, cityResultPrompt, matchResultPrompt string) *quizService {
+	return &quizService{client: client, sql: sql, validator: validator, lowkeyCityVibeCheckPrompt: lowkeyCityVibeCheckPrompt, cityResultPrompt: cityResultPrompt, matchResultPrompt: matchResultPrompt}
 }
 
 // GetPersonalizedQuestions returns the city-mode quiz for city, accepted
@@ -319,9 +321,16 @@ func (s *quizService) generateResult(ctx context.Context, mode, city string, ans
 	log := logging.From(ctx)
 	log.Debug("quizService.generateResult", zap.String("mode", mode), zap.String("city", city), zap.Any("answers", answers))
 
+	// each mode gets its own verdict prompt: city check judges the named
+	// city and craters the score; match invents the city (or a joke one).
+	prompt := s.matchResultPrompt
+	if mode == "city" {
+		prompt = s.cityResultPrompt
+	}
+
 	chatCompletion, err := s.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.DeveloperMessage(s.quizeResultPrompt),
+			openai.DeveloperMessage(prompt),
 			openai.UserMessage("City under lowkey vibe check: " + city + "\n" + "Answers: " + fmt.Sprintf("%v", answers)),
 		},
 		Model: openai.ChatModelGPT5_2,

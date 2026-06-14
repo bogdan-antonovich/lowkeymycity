@@ -128,7 +128,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		client, calls := fakeLLM("", http.StatusOK)
 		// no expectations on sql: an invalid city must never reach storage
-		svc := NewQuizService(client, NewMockSqlExecutor(ctrl), stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, NewMockSqlExecutor(ctrl), stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Atlantis, XX")
 
@@ -143,7 +143,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 		sql := NewMockSqlExecutor(ctrl)
 		// the messy spelling below must reach the cache as the canonical label
 		sql.EXPECT().GetCityQuestions(gomock.Any(), "Portland, OR").Return(cachedRows(), nil)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "  porTLand, or  ")
 
@@ -166,7 +166,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 				stored = append(stored, arg)
 				return nil
 			}).Times(len(portlandQuestions))
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Portland, OR")
 
@@ -190,7 +190,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 		dbDown := errors.New("db: connection refused")
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetCityQuestions(gomock.Any(), "Portland, OR").Return(nil, dbDown)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Portland, OR")
 
@@ -205,7 +205,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetCityQuestions(gomock.Any(), "Portland, OR").Return(nil, nil)
 		// no AddCityQuestion expectation: a failed generation must not write
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Portland, OR")
 
@@ -224,7 +224,7 @@ func TestGetPersonalizedQuestions(t *testing.T) {
 		sql.EXPECT().GetCityQuestions(gomock.Any(), "Portland, OR").Return(nil, nil)
 		// every insert fails, whether the service stops at the first or not
 		sql.EXPECT().AddCityQuestion(gomock.Any(), gomock.Any()).Return(insertBroke).MinTimes(1)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPersonalizedQuestions(t.Context(), "Portland, OR")
 
@@ -273,7 +273,7 @@ func TestGetPreStoredQuestions(t *testing.T) {
 		client, calls := fakeLLM("", http.StatusOK)
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetMatchQuestions(gomock.Any()).Return(matchBankRows(), nil)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPreStoredQuestions(t.Context())
 
@@ -289,7 +289,7 @@ func TestGetPreStoredQuestions(t *testing.T) {
 		// faithful to the generated layer: a :many query with no rows hands
 		// back a nil slice and no error
 		sql.EXPECT().GetMatchQuestions(gomock.Any()).Return(nil, nil)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPreStoredQuestions(t.Context())
 
@@ -306,7 +306,7 @@ func TestGetPreStoredQuestions(t *testing.T) {
 		dbDown := errors.New("db: connection refused")
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetMatchQuestions(gomock.Any()).Return(nil, dbDown)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		q, err := svc.GetPreStoredQuestions(t.Context())
 
@@ -420,7 +420,7 @@ func TestGetResults(t *testing.T) {
 		// must not write
 		sql.EXPECT().GetResultByCombination(gomock.Any(), gomock.Any()).
 			Return(rowFromVerdict("res-stored", "{}", portlandVerdict), nil)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 
@@ -436,7 +436,7 @@ func TestGetResults(t *testing.T) {
 		client, calls := fakeLLM(string(reply), http.StatusOK)
 		sql := NewMockSqlExecutor(ctrl)
 		db := primeResultsDB(sql)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 
@@ -458,7 +458,7 @@ func TestGetResults(t *testing.T) {
 		client, calls := fakeLLM(string(reply), http.StatusOK)
 		sql := NewMockSqlExecutor(ctrl)
 		db := primeResultsDB(sql)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		first, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 		require.NoError(t, err)
@@ -479,7 +479,7 @@ func TestGetResults(t *testing.T) {
 		client, _ := fakeLLM(string(reply), http.StatusOK)
 		sql := NewMockSqlExecutor(ctrl)
 		db := primeResultsDB(sql)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		_, err = svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 		require.NoError(t, err)
@@ -503,7 +503,7 @@ func TestGetResults(t *testing.T) {
 		client, _ := fakeLLM(string(reply), http.StatusOK)
 		sql := NewMockSqlExecutor(ctrl)
 		db := primeResultsDB(sql)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 
@@ -523,7 +523,7 @@ func TestGetResults(t *testing.T) {
 		client, _ := fakeLLM(string(reply), http.StatusOK)
 		sql := NewMockSqlExecutor(ctrl)
 		primeResultsDB(sql)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "match", "Portland, OR", quizAnswers)
 
@@ -537,7 +537,7 @@ func TestGetResults(t *testing.T) {
 		dbDown := errors.New("db: connection refused")
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetResultByCombination(gomock.Any(), gomock.Any()).Return(Result{}, dbDown)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 
@@ -552,7 +552,7 @@ func TestGetResults(t *testing.T) {
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetResultByCombination(gomock.Any(), gomock.Any()).Return(Result{}, pgx.ErrNoRows)
 		// no SaveResult expectation: a failed generation must not write
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 
@@ -567,7 +567,7 @@ func TestGetResults(t *testing.T) {
 		sql := NewMockSqlExecutor(ctrl)
 		sql.EXPECT().GetResultByCombination(gomock.Any(), gomock.Any()).Return(Result{}, pgx.ErrNoRows)
 		// again no SaveResult expectation: garbage must not be stored
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 
@@ -591,7 +591,7 @@ func TestGetResults(t *testing.T) {
 					return rowFromParams("res-retry", arg), nil
 				}),
 		)
-		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "verdict-prompt")
+		svc := NewQuizService(client, sql, stubValidator(ctrl, portlandOnly), "city-vibe-prompt", "city-verdict-prompt", "match-verdict-prompt")
 
 		res, err := svc.GetResults(t.Context(), "city", "Portland, OR", quizAnswers)
 		require.ErrorIs(t, err, insertBroke, "the save error must surface unchanged")

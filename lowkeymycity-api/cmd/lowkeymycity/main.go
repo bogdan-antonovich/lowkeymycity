@@ -35,7 +35,8 @@ type Config struct {
 	Port                      int    `env:"PORT,notEmpty"`
 	GPTModel                  string `env:"OPENAI_MODEL,notEmpty"`
 	LowkeyCityVibeCheckPrompt string `env:"LOWKEY_CITY_VIBE_CHECK_PROMPT,file" envDefault:""`
-	QuizResultsPrompt         string `env:"QUIZ_RESULTS_PROMPT,file" envDefault:""`
+	QuizCityResultsPrompt     string `env:"QUIZ_CITY_RESULTS_PROMPT,file" envDefault:""`
+	QuizMatchResultsPrompt    string `env:"QUIZ_MATCH_RESULTS_PROMPT,file" envDefault:""`
 
 	// CORSOrigins is the comma-separated CORS allowlist; outside prod the
 	// Vite dev server origin is appended automatically.
@@ -177,7 +178,7 @@ func main() {
 	// paths on the version group
 	api := e.Group(server.APIRoot).Group(server.V1)
 
-	quizService := quiz.NewQuizService(openaiClient, quiz.New(pool), cityValidator, cfg.LowkeyCityVibeCheckPrompt, cfg.QuizResultsPrompt)
+	quizService := quiz.NewQuizService(openaiClient, quiz.New(pool), cityValidator, cfg.LowkeyCityVibeCheckPrompt, cfg.QuizCityResultsPrompt, cfg.QuizMatchResultsPrompt)
 	quizController := quiz.NewQuizController(quizService)
 	quizController.GetQuestions(api)
 	quizController.GetResults(api)

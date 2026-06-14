@@ -61,7 +61,8 @@ jobs:
           envs: >-
             TAG,
             LOWKEY_CITY_VIBE_CHECK_PROMPT,
-            QUIZ_RESULTS_PROMPT,
+            QUIZ_CITY_RESULTS_PROMPT,
+            QUIZ_MATCH_RESULTS_PROMPT,
             DOCKERHUB_USERNAME,
             DOCKERHUB_TOKEN,
             PORT,
@@ -125,7 +126,8 @@ jobs:
             sync_config "grafana_datasource" ~/lowkeymycity-api/cfg/grafana-datasource.yml
 
             sync_config_value "LOWKEY_CITY_VIBE_CHECK_PROMPT" "$LOWKEY_CITY_VIBE_CHECK_PROMPT"
-            sync_config_value "QUIZ_RESULTS_PROMPT"           "$QUIZ_RESULTS_PROMPT"
+            sync_config_value "QUIZ_CITY_RESULTS_PROMPT"      "$QUIZ_CITY_RESULTS_PROMPT"
+            sync_config_value "QUIZ_MATCH_RESULTS_PROMPT"     "$QUIZ_MATCH_RESULTS_PROMPT"
 
             cd ~/lowkeymycity-api
 
@@ -209,7 +211,7 @@ jobs:
 
             echo "Cleaning up old configs..."
             docker config ls --format '{{.Name}}' \
-              | grep -E '^(loki_config|grafana_datasource|LOWKEY_CITY_VIBE_CHECK_PROMPT|QUIZ_RESULTS_PROMPT)_[a-f0-9]{8}$' \
+              | grep -E '^(loki_config|grafana_datasource|LOWKEY_CITY_VIBE_CHECK_PROMPT|QUIZ_CITY_RESULTS_PROMPT|QUIZ_MATCH_RESULTS_PROMPT)_[a-f0-9]{8}$' \
               | grep -v "_${TAG}$" \
               | xargs -r docker config rm \
               || true
@@ -225,7 +227,8 @@ jobs:
           GRAFANA_PORT: ${{ vars.GRAFANA_PORT }}
           TRUSTED_PROXY_RANGES: ${{ vars.TRUSTED_PROXY_RANGES }}
           LOWKEY_CITY_VIBE_CHECK_PROMPT: ${{ vars.LOWKEY_CITY_VIBE_CHECK_PROMPT }}
-          QUIZ_RESULTS_PROMPT: ${{ vars.QUIZ_RESULTS_PROMPT }}
+          QUIZ_CITY_RESULTS_PROMPT: ${{ vars.QUIZ_CITY_RESULTS_PROMPT }}
+          QUIZ_MATCH_RESULTS_PROMPT: ${{ vars.QUIZ_MATCH_RESULTS_PROMPT }}
           DB_HOST: ${{ vars.DB_HOST }}
           DB_PORT: ${{ vars.DB_PORT }}
           DB_NAME: ${{ vars.DB_NAME }}
