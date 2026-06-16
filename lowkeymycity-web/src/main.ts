@@ -3,9 +3,10 @@ import { createWebHistory } from 'vue-router'
 
 import { createApp } from '@/app-factory'
 
-// Prerendered routes ship real markup inside #app, so hydrate those; the
-// SPA fallback (app.html) ships an empty shell, so mount fresh there.
-const root = document.getElementById('app')!
-const { app } = createApp({ hydrate: root.hasChildNodes(), history: createWebHistory() })
+// Deliberately client-render rather than hydrate. The prerendered HTML
+// exists for crawlers and first paint; mounting fresh (Vue clears #app and
+// re-renders identical markup) avoids hydration mismatches from <Teleport>
+// and dev-vs-prod env differences, which would otherwise blank the page.
+const { app } = createApp({ hydrate: false, history: createWebHistory() })
 app.use(createHead())
 app.mount('#app')
