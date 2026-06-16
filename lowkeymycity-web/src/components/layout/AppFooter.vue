@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { BUY_ME_A_COFFEE_URL } from '@/config'
+import { useCryptoDonate } from '@/composables/useCryptoDonate'
+
+const { open: openDonate } = useCryptoDonate()
 
 const year = new Date().getFullYear()
 </script>
@@ -11,14 +13,13 @@ const year = new Date().getFullYear()
     >
       <p>made with zero math and pure vibes</p>
 
-      <a
-        :href="BUY_ME_A_COFFEE_URL"
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
         class="font-medium text-cream underline decoration-coral decoration-2 underline-offset-4 transition-colors hover:text-coral"
+        @click="openDonate"
       >
         ☕ this site runs on coffee
-      </a>
+      </button>
 
       <p>
         © {{ year }} lowkeymycity.com ·

@@ -2,9 +2,10 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { BUY_ME_A_COFFEE_URL } from '@/config'
+import { useCryptoDonate } from '@/composables/useCryptoDonate'
 
 const route = useRoute()
+const { open: openDonate } = useCryptoDonate()
 
 // Mid-quiz the header goes quiet so nobody taps their way out of question 9.
 const quietMode = computed(() => route.name === 'quiz')
@@ -43,14 +44,13 @@ const quietMode = computed(() => route.name === 'quiz')
           </RouterLink>
         </template>
 
-        <a
-          :href="BUY_ME_A_COFFEE_URL"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
           class="rounded-full bg-gradient-to-r from-lilac-deep to-coral px-4 py-1.5 text-sm font-semibold text-white transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95"
+          @click="openDonate"
         >
           ☕ buy me a coffee
-        </a>
+        </button>
       </nav>
     </div>
   </header>

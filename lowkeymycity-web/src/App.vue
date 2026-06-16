@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CryptoDonateDialog from '@/components/support/CryptoDonateDialog.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 </script>
@@ -10,5 +11,6 @@ import AppHeader from '@/components/layout/AppHeader.vue'
       <RouterView />
     </main>
     <AppFooter />
+    <CryptoDonateDialog />
   </div>
 </template>
