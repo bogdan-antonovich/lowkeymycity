@@ -5,7 +5,7 @@ export interface CryptoWallet {
   symbol: string
   /** Network label so donors send on the right chain, e.g. 'Bitcoin', 'ERC-20', 'Solana', 'TRC-20'. */
   network: string
-  /** The receiving address. Paste the real one here — placeholders are obviously fake on purpose. */
+  /** The receiving address. Paste the real one here. Placeholders are obviously fake on purpose. */
   address: string
 }
 

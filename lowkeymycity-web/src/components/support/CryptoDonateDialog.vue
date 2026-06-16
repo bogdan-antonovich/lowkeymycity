@@ -76,7 +76,7 @@ onBeforeUnmount(() => {
             <div>
               <h2 id="donate-title" class="font-display text-xl font-bold">☕ fuel the vibes</h2>
               <p class="mt-1 text-sm text-ink-soft">
-                no card needed — just send a little crypto, any amount.
+                cards hate me, so we do crypto. pick a coin, send whatever. spare change counts.
               </p>
             </div>
             <button
@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
             <li
               v-for="wallet in CRYPTO_WALLETS"
               :key="wallet.symbol + wallet.network"
-              class="rounded-xl border-2 border-ink/10 bg-white p-3"
+              class="rounded-xl border-2 border-ink bg-white p-3 shadow-[3px_3px_0_0_var(--color-lilac)]"
             >
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-baseline gap-2">
@@ -126,7 +126,7 @@ onBeforeUnmount(() => {
                 </code>
                 <button
                   type="button"
-                  class="shrink-0 rounded-lg border-2 border-ink bg-ink px-3 py-1.5 text-xs font-semibold text-cream transition-transform motion-safe:active:scale-95"
+                  class="shrink-0 rounded-lg border-2 border-ink bg-ink px-3 py-1.5 text-xs font-semibold text-cream shadow-[3px_3px_0_0_var(--color-coral)] transition-all motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 motion-safe:active:shadow-none"
                   @click="copy(wallet.address)"
                 >
                   {{ copied === wallet.address ? 'copied!' : 'copy' }}
@@ -136,7 +136,7 @@ onBeforeUnmount(() => {
           </ul>
 
           <p class="mt-4 text-center text-xs text-ink-soft">
-            double-check the network before sending — wrong chain, lost coins.
+            send on the right network or your coins ghost you forever. no take-backs.
           </p>
         </div>
       </div>
