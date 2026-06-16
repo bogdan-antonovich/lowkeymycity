@@ -74,9 +74,7 @@ onBeforeUnmount(() => {
         >
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h2 id="donate-title" class="font-display text-xl font-bold">
-                ☕ fuel the vibes
-              </h2>
+              <h2 id="donate-title" class="font-display text-xl font-bold">☕ fuel the vibes</h2>
               <p class="mt-1 text-sm text-ink-soft">
                 no card needed — just send a little crypto, any amount.
               </p>
