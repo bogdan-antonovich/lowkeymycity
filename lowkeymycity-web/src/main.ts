@@ -1,11 +1,11 @@
-import { createApp } from 'vue'
 import { createHead } from '@unhead/vue/client'
+import { createWebHistory } from 'vue-router'
 
-import App from '@/App.vue'
-import router from '@/router'
+import { createApp } from '@/app-factory'
 
-import '@/assets/main.css'
-
-const head = createHead()
-
-createApp(App).use(head).use(router).mount('#app')
+// Prerendered routes ship real markup inside #app, so hydrate those; the
+// SPA fallback (app.html) ships an empty shell, so mount fresh there.
+const root = document.getElementById('app')!
+const { app } = createApp({ hydrate: root.hasChildNodes(), history: createWebHistory() })
+app.use(createHead())
+app.mount('#app')

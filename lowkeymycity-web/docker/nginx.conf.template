@@ -23,6 +23,9 @@ server {
     }
 
     location / {
-        try_files $uri $uri/ /index.html;
+        # Prerendered routes are real files (/index.html, /quiz/index.html);
+        # everything dynamic (/r/:id) or unmatched falls back to app.html,
+        # the clean SPA shell written by the build's prerender step.
+        try_files $uri $uri/ /app.html;
     }
 }

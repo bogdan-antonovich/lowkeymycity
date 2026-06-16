@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"lowkeymycity/pkg/logging"
 	"lowkeymycity/pkg/types"
 	"lowkeymycity/pkg/validator"
@@ -306,7 +308,7 @@ func (s *quizService) generateQuestions(ctx context.Context, label string) (q []
 		return
 	}
 
-	err = sonic.Unmarshal([]byte(chatCompletion.Choices[0].Message.Content), &q)
+	err = sonic.Unmarshal([]byte(stripEmDashes(chatCompletion.Choices[0].Message.Content)), &q)
 	if err != nil {
 		log.Error("LLM reply is not a question array", zap.Error(err), zap.String("label", label))
 	}
@@ -340,9 +342,19 @@ func (s *quizService) generateResult(ctx context.Context, mode, city string, ans
 		return
 	}
 
-	err = sonic.Unmarshal([]byte(chatCompletion.Choices[0].Message.Content), &result)
+	err = sonic.Unmarshal([]byte(stripEmDashes(chatCompletion.Choices[0].Message.Content)), &result)
 	if err != nil {
 		log.Error("LLM reply is not a result", zap.Error(err), zap.String("mode", mode), zap.String("city", city))
 	}
 	return
+}
+
+// stripEmDashes rewrites em-dashes out of LLM-generated copy before it is
+// stored and shown. The product copy never uses them, so the spaced form
+// collapses to a comma and any bare one becomes a comma too. It is safe to
+// run on the raw JSON reply: em-dashes only ever appear inside string
+// values, never in the structure, so the result still parses.
+func stripEmDashes(s string) string {
+	s = strings.ReplaceAll(s, " — ", ", ")
+	return strings.ReplaceAll(s, "—", ", ")
 }
