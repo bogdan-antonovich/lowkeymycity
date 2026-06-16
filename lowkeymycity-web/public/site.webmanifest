@@ -1,0 +1,14 @@
+{
+  "name": "lowkeymycity",
+  "short_name": "lowkeymycity",
+  "description": "A 12-question vibe check for any US city.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf6ee",
+  "theme_color": "#faf6ee",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" }
+  ]
+}

@@ -1,7 +1,7 @@
 export type QuizMode = 'city' | 'match'
 
 // One quiz question. `id` is the vibe axis it measures (climate, pace,
-// social battery, ...) — stable across modes.
+// social battery, ...), stable across modes.
 export interface QuizQuestion {
   id: string
   text: string

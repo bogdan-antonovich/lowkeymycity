@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useHead } from '@unhead/vue'
 
 import CityCheckResult from '@/components/result/CityCheckResult.vue'
 import CityMatchResult from '@/components/result/CityMatchResult.vue'
 import { MOCK_RESULTS } from '@/data/mockResults'
 import type { QuizResult } from '@/types/quiz'
+
+// Internal preview/testing page, never index it.
+useHead({
+  title: 'preview | lowkeymycity',
+  meta: [{ name: 'robots', content: 'noindex, nofollow' }],
+})
 
 interface Scenario {
   id: string
@@ -13,8 +20,8 @@ interface Scenario {
 }
 
 const scenarios: Scenario[] = [
-  { id: 'city-high', label: 'city check — good match', result: MOCK_RESULTS.cityHigh },
-  { id: 'city-low', label: 'city check — bad match', result: MOCK_RESULTS.cityLow },
+  { id: 'city-high', label: 'city check, good match', result: MOCK_RESULTS.cityHigh },
+  { id: 'city-low', label: 'city check, bad match', result: MOCK_RESULTS.cityLow },
   { id: 'match', label: 'find me a city', result: MOCK_RESULTS.match },
 ]
 
@@ -29,7 +36,7 @@ const active = ref(scenarios[0])
       <p class="font-semibold text-ink">preview page (not linked from anywhere)</p>
       <p class="mt-1">
         hardcoded results so you can see what users get at the end of each quiz. switch scenarios
-        below — animations replay on every switch.
+        below, animations replay on every switch.
       </p>
       <div class="mt-3 flex flex-wrap gap-2">
         <button

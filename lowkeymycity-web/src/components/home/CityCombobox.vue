@@ -19,7 +19,7 @@ onMounted(async () => {
     cityLabels.value = await loadUsCities()
     cityLowered.value = cityLabels.value.map((city) => city.toLowerCase())
   } catch {
-    // list unavailable — the "can't find that one" hint covers it
+    // list unavailable, the "can't find that one" hint covers it
   }
 })
 
@@ -113,7 +113,7 @@ function onKeydown(event: KeyboardEvent) {
     </ul>
 
     <p v-if="noMatches" class="absolute mt-4 w-full text-center text-sm text-ink-soft">
-      can't find that one — US cities only for now, sorry
+      can't find that one, US cities only for now, sorry
     </p>
   </div>
 </template>

@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { getQuestions, submitQuiz } from '@/services/api'
 import type { QuizAnswer, QuizMode, QuizQuestion } from '@/types/quiz'
+
+// Functional, query-param-driven flow, keep it out of the index.
+useHead({
+  title: 'take the quiz | lowkeymycity',
+  meta: [{ name: 'robots', content: 'noindex, follow' }],
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -225,7 +232,7 @@ function retry() {
       <div class="mb-6 text-5xl">🧯</div>
       <h1 class="font-display text-3xl font-bold">well. that didn't work</h1>
       <p class="mx-auto mt-4 max-w-md text-lg text-ink-soft">
-        something went sideways on our end. your answers are safe — hit retry.
+        something went sideways on our end. your answers are safe, hit retry.
       </p>
       <div class="mt-8 flex justify-center gap-3">
         <button

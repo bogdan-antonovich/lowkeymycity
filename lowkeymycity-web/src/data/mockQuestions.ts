@@ -1,6 +1,6 @@
 import type { QuizQuestion } from '@/types/quiz'
 
-// Mock question sets. The real ones come from GET /api/quiz/questions —
+// Mock question sets. The real ones come from GET /api/quiz/questions;
 // these define the tone and structure that endpoint should produce.
 // One question per vibe axis, scenarios over survey-speak, 4 options each,
 // and every option has to be a valid personality (nobody feels judged).
@@ -13,7 +13,7 @@ export const MATCH_QUESTIONS: QuizQuestion[] = [
       "eternal drizzle, i'm basically a houseplant",
       "heat. always. i don't own a real jacket",
       'four seasons, i like the plot twists',
-      'mild and boring — weather should be background noise',
+      'mild and boring, weather should be background noise',
     ],
   },
   {
@@ -58,7 +58,7 @@ export const MATCH_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 'budget',
-    text: 'real talk — monthly rent that lets you sleep at night:',
+    text: 'real talk, monthly rent that lets you sleep at night:',
     options: [
       'under $1,200 and proud of it',
       '$1,500-ish if the city earns it',
@@ -118,7 +118,7 @@ export const MATCH_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 'dealbreaker',
-    text: 'instant dealbreaker in a city — pick the worst one:',
+    text: 'instant dealbreaker in a city, pick the worst one:',
     options: [
       'winters that go full survival mode',
       'needing a car for literally everything',
@@ -133,7 +133,7 @@ export function cityQuestions(city: string): QuizQuestion[] {
   return [
     {
       id: 'climate',
-      text: `be honest — when ${name} weather acts up, you:`,
+      text: `be honest, when ${name} weather acts up, you:`,
       options: [
         'dress for it and move on',
         "complain loudly but secretly don't mind",
@@ -183,7 +183,7 @@ export function cityQuestions(city: string): QuizQuestion[] {
     },
     {
       id: 'budget',
-      text: `money check — rent in ${name} should feel like:`,
+      text: `money check, rent in ${name} should feel like:`,
       options: [
         "barely noticeable, i'm saving",
         'fair for what i get',
@@ -193,7 +193,7 @@ export function cityQuestions(city: string): QuizQuestion[] {
     },
     {
       id: 'food',
-      text: `eating out in ${name} — what's your honest pattern?`,
+      text: `eating out in ${name}, what's your honest pattern?`,
       options: [
         "a few times a week, it's a lifestyle",
         'weekly treat, chosen very carefully',
@@ -203,7 +203,7 @@ export function cityQuestions(city: string): QuizQuestion[] {
     },
     {
       id: 'chaos',
-      text: 'traffic, crowds, sirens — where is your tolerance meter?',
+      text: 'traffic, crowds, sirens, where is your tolerance meter?',
       options: [
         'zero. i require calm',
         'low, but headphones fix it',
@@ -228,7 +228,7 @@ export function cityQuestions(city: string): QuizQuestion[] {
         'old buildings with stories',
         'the skyline at night',
         'green streets and front porches',
-        'weird local details — murals, signs, gnomes',
+        'weird local details, murals, signs, gnomes',
       ],
     },
     {

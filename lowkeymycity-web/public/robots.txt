@@ -1,0 +1,10 @@
+# https://lowkeymycity.com
+User-agent: *
+Allow: /
+
+# Functional and ephemeral routes, no value in the index.
+Disallow: /quiz
+Disallow: /preview
+Disallow: /r/
+
+Sitemap: https://lowkeymycity.com/sitemap.xml

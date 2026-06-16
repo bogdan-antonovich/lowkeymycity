@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useRoute } from 'vue-router'
 
 import CityCheckResult from '@/components/result/CityCheckResult.vue'
 import CityMatchResult from '@/components/result/CityMatchResult.vue'
 import { getResult } from '@/services/api'
 import type { QuizResult } from '@/types/quiz'
+
+// Ephemeral, per-share results, not for the index. (Rich per-result
+// social previews would need server-rendered OG tags, tracked separately.)
+useHead({
+  title: 'your verdict | lowkeymycity',
+  meta: [{ name: 'robots', content: 'noindex, follow' }],
+})
 
 const route = useRoute()
 
@@ -32,7 +40,7 @@ onMounted(async () => {
       <div class="mb-6 text-5xl">🗑️</div>
       <h1 class="font-display text-3xl font-bold">that one's gone</h1>
       <p class="mx-auto mt-4 max-w-md text-lg text-ink-soft">
-        this result doesn't exist, or it got cleaned up. the quiz takes about 90 seconds — easier to
+        this result doesn't exist, or it got cleaned up. the quiz takes about 90 seconds, easier to
         get a fresh one than to mourn this one.
       </p>
       <RouterLink

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7c5cf0"/>
+      <stop offset="1" stop-color="#ff6b5e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1200" height="630" fill="#faf6ee"/>
+
+  <!-- neobrutalist accent card, offset shadow -->
+  <rect x="60" y="62" width="1080" height="506" rx="28" fill="#221d17"/>
+  <rect x="48" y="50" width="1080" height="506" rx="28" fill="#ffffff" stroke="#221d17" stroke-width="6"/>
+
+  <!-- brand chip -->
+  <g>
+    <rect x="96" y="104" width="300" height="64" rx="32" fill="#221d17"/>
+    <text x="128" y="146" font-family="DejaVu Sans, sans-serif" font-size="30" font-weight="700" fill="#faf6ee">lowkeymycity</text>
+  </g>
+
+  <!-- headline -->
+  <text font-family="DejaVu Sans, sans-serif" font-weight="800" font-size="92" fill="#221d17">
+    <tspan x="96" y="316">how <tspan fill="url(#brand)">lowkey</tspan> is</tspan>
+    <tspan x="96" y="416">your city, actually?</tspan>
+  </text>
+
+  <!-- subline -->
+  <text x="100" y="492" font-family="DejaVu Sans, sans-serif" font-size="36" font-weight="500" fill="#6b6258">a 12-question vibe check for any US city.</text>
+</svg>

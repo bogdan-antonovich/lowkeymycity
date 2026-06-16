@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useRouter } from 'vue-router'
 
 import CityCombobox from '@/components/home/CityCombobox.vue'
 import { loadUsCities } from '@/data/usCities'
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SOCIAL_TITLE } from '@/config'
 
 const router = useRouter()
+
+useHead({
+  title: DEFAULT_TITLE,
+  meta: [
+    { name: 'description', content: DEFAULT_DESCRIPTION },
+    { property: 'og:title', content: SOCIAL_TITLE },
+    { property: 'og:description', content: DEFAULT_DESCRIPTION },
+    { name: 'twitter:title', content: SOCIAL_TITLE },
+    { name: 'twitter:description', content: DEFAULT_DESCRIPTION },
+  ],
+})
 
 const cityInput = ref('')
 const cities = shallowRef<string[]>([])
@@ -14,7 +27,7 @@ onMounted(async () => {
   try {
     cities.value = await loadUsCities()
   } catch {
-    // list unavailable — the submit button just stays disabled
+    // list unavailable, the submit button just stays disabled
   }
 })
 
